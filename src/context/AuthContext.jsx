@@ -1,6 +1,4 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "../supabase/client";
 
 const AuthContext = createContext();
 
@@ -9,30 +7,32 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check session on load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth state changes
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.subscription.unsubscribe();
+    // Check if user is logged in from localStorage
+    const loggedIn = localStorage.getItem('adminLoggedIn');
+    const adminEmail = localStorage.getItem('adminEmail');
+    
+    if (loggedIn === 'true' && adminEmail) {
+      setUser({ email: adminEmail });
+    }
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+    // Temporary simple login
+    if (email === 'freefireofficialuser@gmail.com' && password === 'admin123') {
+      localStorage.setItem('adminLoggedIn', 'true');
+      localStorage.setItem('adminEmail', email);
+      setUser({ email });
+      return { user: { email } };
+    } else {
+      throw new Error('Invalid credentials');
+    }
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    localStorage.removeItem('adminLoggedIn');
+    localStorage.removeItem('adminEmail');
+    setUser(null);
   };
 
   return (

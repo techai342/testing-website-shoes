@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
@@ -8,7 +7,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -16,10 +14,19 @@ export default function Login() {
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
-      navigate('/admin/dashboard');
+      
+      // TEMPORARY FIX: Direct login without Supabase
+      if (email === 'freefireofficialuser@gmail.com' && password === 'admin123') {
+        // Save to localStorage for session
+        localStorage.setItem('adminLoggedIn', 'true');
+        localStorage.setItem('adminEmail', email);
+        navigate('/admin/dashboard');
+      } else {
+        setError('Invalid email or password. Use: freefireofficialuser@gmail.com / admin123');
+      }
+      
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      setError('Login failed. Please try again.');
     }
     setLoading(false);
   };
@@ -49,6 +56,7 @@ export default function Login() {
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
               <p className="text-gray-400">Sign in to manage your store</p>
+              <p className="text-green-400 text-sm mt-2">Use: freefireofficialuser@gmail.com / admin123</p>
             </div>
 
             {error && (
@@ -70,7 +78,7 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="freefireofficialuser@gmail.com"
                     className="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
                     required
                   />
@@ -90,7 +98,7 @@ export default function Login() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="admin123"
                     className="w-full p-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-300"
                     required
                   />

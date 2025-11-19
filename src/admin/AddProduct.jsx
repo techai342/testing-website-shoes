@@ -14,30 +14,50 @@ export default function AddProduct() {
   });
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProduct(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      // Create preview
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
   const handleImageUpload = async (file) => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `products/${fileName}`;
+      const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading image to bucket: product-images');
+      
+      const { data, error } = await supabase.storage
         .from('product-images')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      console.log('Upload successful:', data);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
+      console.log('Public URL:', publicUrl);
       return publicUrl;
+
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -57,9 +77,13 @@ export default function AddProduct() {
       let imageUrl = "";
       // Upload image if selected
       if (image) {
+        console.log('Starting image upload...');
         imageUrl = await handleImageUpload(image);
+        console.log('Image uploaded successfully:', imageUrl);
       }
 
+      console.log('Inserting product into database...');
+      
       // Insert product into database
       const { data, error } = await supabase
         .from('products')
@@ -73,7 +97,12 @@ export default function AddProduct() {
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Product inserted successfully:', data);
 
       alert("Product added successfully! ✅");
       
@@ -83,6 +112,7 @@ export default function AddProduct() {
         location: "", seller_number: "", description: "",
       });
       setImage(null);
+      setImagePreview("");
       
     } catch (error) {
       console.error('Error adding product:', error);
@@ -103,13 +133,22 @@ export default function AddProduct() {
           <input 
             type="file"
             accept="image/*"
-            onChange={(e) => setImage(e.target.files[0])}
+            onChange={handleImageSelect}
             className="w-full p-3 rounded bg-gray-700 text-white border border-gray-600"
           />
           {image && (
-            <p className="text-green-400 text-sm mt-2">
-              Selected: {image.name}
-            </p>
+            <div className="mt-3">
+              <p className="text-green-400 text-sm mb-2">
+                Selected: {image.name}
+              </p>
+              {imagePreview && (
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="w-32 h-32 object-cover rounded border"
+                />
+              )}
+            </div>
           )}
         </div>
 
@@ -228,6 +267,12 @@ export default function AddProduct() {
           {uploading ? "Adding Product..." : "Add Product"}
         </button>
       </form>
+
+      <div className="mt-4 p-3 bg-green-900/30 rounded">
+        <p className="text-green-400 text-sm">
+          ✅ Storage bucket ready! You can now upload images directly.
+        </p>
+      </div>
     </div>
   );
 }

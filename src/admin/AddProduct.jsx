@@ -37,10 +37,10 @@ export default function AddProduct() {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      console.log('Uploading image to bucket: product-images');
+      console.log('Uploading image to bucket: product images');
       
       const { data, error } = await supabase.storage
-        .from('product-images')
+        .from('product images')  // SPACE WALA BUCKET
         .upload(filePath, file);
 
       if (error) {
@@ -52,7 +52,7 @@ export default function AddProduct() {
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
+        .from('product images')  // SPACE WALA BUCKET
         .getPublicUrl(filePath);
 
       console.log('Public URL:', publicUrl);
@@ -89,10 +89,16 @@ export default function AddProduct() {
         .from('products')
         .insert([
           {
-            ...product,
+            name: product.name,
             price: Number(product.price),
+            category: product.category,
+            size: product.size,
+            color: product.color,
+            location: product.location,
+            seller_number: product.seller_number,
+            description: product.description,
             images: imageUrl ? [imageUrl] : [],
-            timestamp: new Date().toISOString()
+            created_at: new Date().toISOString()
           }
         ])
         .select();
@@ -270,7 +276,7 @@ export default function AddProduct() {
 
       <div className="mt-4 p-3 bg-green-900/30 rounded">
         <p className="text-green-400 text-sm">
-          ✅ Storage bucket ready! You can now upload images directly.
+          ✅ Using bucket: "product images" - Ready for image upload!
         </p>
       </div>
     </div>
